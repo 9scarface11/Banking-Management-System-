@@ -1,0 +1,203 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <random>  // For secure account number generation
+
+using namespace std;
+
+// Enhanced Account structure
+struct Account {
+    int accountNumber;
+    string name;
+    double balance;
+
+    // Constructor with secure account number generation
+    Account(const string& name, double initialBalance = 0.0) {
+        static random_device rd;
+        static mt19937 generator(rd());
+        uniform_int_distribution<int> distribution(100000, 999999);
+        accountNumber = distribution(generator);
+        this->name = name;
+        this->balance = initialBalance;
+    }
+
+    // Deposit function 
+    void deposit(double amount) {
+        if (amount > 0.0) {
+            balance += amount;
+            cout << "Deposit successful for account " << accountNumber << "! New balance: $" << balance << endl;
+        } else {
+            cout << "Invalid deposit amount." << endl;
+        }
+    }
+
+    // Withdraw function
+    void withdraw(double amount) {
+        if (amount > 0.0 && amount <= balance) {
+            balance -= amount;
+            cout << "Withdrawal successful for account " << accountNumber << "! New balance: $" << balance << endl;
+        } else {
+            cout << "Insufficient funds or invalid withdrawal amount." << endl;
+        }
+    }
+
+    // Display account information
+    void displayInfo() {
+        cout << "Account Number: " << accountNumber << endl;
+        cout << "Name: " << name << endl;
+        cout << "Balance: $" << balance << endl;
+    }
+};
+
+// Hash table (consider using a more robust hashing library)
+const int TABLE_SIZE = 100; // Adjust based on expected number of users
+
+Account hashTable[TABLE_SIZE];
+
+int hashFunction(int accountNumber) {
+    return accountNumber % TABLE_SIZE;
+}
+
+void insertAccount(Account account) {
+    int index = hashFunction(account.accountNumber);
+    // Handle collisions (e.g., linear probing)
+    while (hashTable[index].accountNumber != 0) {
+        index = (index + 1) % TABLE_SIZE;
+    }
+    hashTable[index] = account;
+}
+
+Account* findAccount(int accountNumber) {
+    int index = hashFunction(accountNumber);
+    while (hashTable[index].accountNumber != 0) {
+        if (hashTable[index].accountNumber == accountNumber) {
+            return &hashTable[index];
+        }
+        index = (index + 1) % TABLE_SIZE;
+    }
+    return nullptr;
+}
+
+// Placeholder database interaction functions (replace with actual database access)
+bool updateDatabase(int accountNumber, double newBalance) 
+{                                                         // ... connect to database, update balance for account number ...
+       return true;                                       // Simulate successful update
+                                                                      
+}
+
+bool deleteAccount(int accountNumber)
+{                                                         // ... connect to database, delete account ...
+    return true;                                         // Simulate successful deletion
+}
+
+// Basic menu-driven banking system
+int main() {
+    vector<Account> accounts; // Optional: Use this for simpler account management
+
+    int choice, accountNum;
+    double amount;
+    string name;
+
+while (true){         
+        cout << "\nBanking Management System\n";
+        cout << "1. Create Account\n";
+        cout << "2. Deposit\n";
+        cout << "3. Withdraw\n";
+        cout << "4. Display Account Info\n";
+        cout << "5. Delete Account (**WARNING: This cannot be undone**)\n"; // Added delete option with warning
+        cout << "6. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+switch(choice)
+ case 1:
+            cout << "Enter your name: ";
+            cin.ignore(); // Clear input buffer (optional)
+            getline(cin, name);
+            cout << "Enter initial deposit amount (or 0 for no initial deposit): ";
+            cin >> amount;
+            accounts.push_back(Account(name, amount));  // Use vector for account storage (optional)
+            cout << "Account created successfully! Your account number is: " << accounts.back().accountNumber << endl;
+            break;
+  case 2:
+            cout << "Enter account number for deposit: ";
+            cin >> accountNum;
+            Account* account = findAccount(accountNum);
+            if (account) {
+                cout << "Enter amount to deposit: ";
+                cin >> amount;
+                account->deposit(amount);
+                if (updateDatabase(accountNum, account->balance)) { // Simulate database update
+                    cout << "Database update successful." << endl;
+                } else {
+                    cout << "Database update failed. Please try again later." << endl;
+                }
+            } else {
+                cout << "Account not found." << endl;
+            }
+            break;
+case 3:
+            cout << "Enter account number for withdrawal: ";
+            cin >> accountNum;
+            account = findAccount(accountNum);
+            if (account) {
+                cout << "Enter amount to withdraw: ";
+                cin >> amount;
+                account->withdraw(amount);
+                if (updateDatabase(accountNum, account->balance)) { // Simulate database update
+                    cout << "Database update successful." << endl;
+                } else {
+                    cout << "Database update failed. Please try again later." << endl;
+                }
+            } else {
+                cout << "Account not found." << endl;
+            }
+            break;
+case 4:
+            cout << "Enter account number to display info: ";
+            cin >> accountNum;
+            account = findAccount(accountNum);
+            if (account) {
+                account->displayInfo();
+            } else {
+                cout << "Account not found." << endl;
+            }
+            break;
+ case 5:
+            cout << "**WARNING: Deleting an account cannot be undone.**" << endl;
+            cout << "Enter account number to delete: ";
+            cin >> accountNum;
+            account = findAccount(accountNum);
+            if (account) {
+                // Confirmation prompt for deletion
+                char confirmation;
+                cout << "Are you sure you want to delete account " << accountNum << "? (y/N): ";
+                cin >> confirmation;
+                if (confirmation == 'y' || confirmation == 'Y') {
+                    // Remove account from hash table (implementation may vary depending on data structure)
+                    int index = hashFunction(accountNum);
+                    while (hashTable[index].accountNumber != accountNumber) {
+                        index = (index + 1) % TABLE_SIZE;
+                    }
+                    hashTable[index].accountNumber = 0;  // Mark slot as empty
+
+                    // Simulate deleting account from database (replace with actual database interaction)
+                    if (updateDatabase(accountNumber, -1.0)) { // Simulate deletion by setting balance to -1.0
+                        cout << "Account " << accountNumber << " deleted successfully." << endl;
+                    } else {
+                        cout << "Database update failed during deletion. Please try again later." << endl;
+                        // Consider adding logic to restore the account in the hash table if database update fails
+                    }
+                } else {
+                    cout << "Account deletion cancelled." << endl;
+                }
+            } else {
+                cout << "Account not found." << endl;
+            }
+            break;
+ case 6:
+            cout << "Exiting Banking Management System..." << endl;
+            break;
+}
+}
+
